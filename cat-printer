@@ -1,3 +1,17 @@
+#! /usr/bin/env python3
+
+"""
+cat-printer
+
+Print images and text on YHK/Cat Bluetooth thermal printers.
+
+Copyright
+  * 2024 Abhinav Golwalkar https://github.com/abhigkar/YHK-Cat-Thermal-Printer
+  * 2026 Hans Schou https://github.com/fun6400/cat-printer
+
+License GPLv3
+"""
+
 import socket
 import PIL.Image
 import PIL.ImageDraw
