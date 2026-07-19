@@ -29,6 +29,8 @@ import struct
 printerWidth = 384
 port = 2
 
+VERSION = '1.0.0'
+
 CONFIG_PATH = Path.home() / ".config" / "cat-printer" / "config"
 MAC_RE = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
 
@@ -40,6 +42,9 @@ def load_config():
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Print images and text on YHK/Cat Bluetooth thermal printers.")
+    parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
+    parser.add_argument('--verbose', action='store_true',
+                         help="Print progress messages while connecting and printing")
     parser.add_argument('--mac', metavar='XX:XX:XX:XX:XX:XX',
                          help=f"Bluetooth MAC address of the printer "
                               f"(overrides 'mac' in {CONFIG_PATH})")
@@ -285,7 +290,8 @@ s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM
 s.connect((mac,port))
 
 try:
-    print("Connecting to printer...")
+    if args.verbose:
+        print("Connecting to printer...")
     getPrinterStatus(s)
     sleep(sleep_between)
     getPrinterSerialNumber(s)
