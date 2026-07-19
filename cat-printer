@@ -14,8 +14,10 @@ License GPLv3
 
 import argparse
 import configparser
+import io
 import re
 import socket
+import sys
 import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
@@ -70,9 +72,10 @@ def parse_args():
                               "several items in a row, with no bottom margin between them. "
                               'Example: --file="Hello,\\nworld\\!"')
     parser.add_argument('text', nargs='*',
-                         help="Used only when --file is not given: a file path or literal text "
-                              "to print, same rules as --file. Several words are joined with "
-                              "spaces into one string, e.g. cat-printer Hello, world\\!")
+                         help="Used only when --file is not given and nothing is piped in on "
+                              "stdin: a file path or literal text to print, same rules as "
+                              "--file. Several words are joined with spaces into one string, "
+                              "e.g. cat-printer Hello, world\\!")
     return parser.parse_args()
 
 def resolve_mac(args, config):
@@ -114,14 +117,20 @@ def resolve_port(args, config):
     return config.getint('printer', 'port', fallback=2)
 
 def resolve_sources(args):
-    """Return the list of raw --file/text values to print, in order."""
+    """Return the list of raw values to print, in order: --file entries, or a single
+    positional-text entry, or (if neither is given and data is piped in) raw stdin bytes."""
     if args.file and args.text:
         raise SystemExit("Use either --file or plain text arguments, not both.")
     if args.file:
         return args.file
     if args.text:
         return [" ".join(args.text)]
-    raise SystemExit("Nothing to print: pass --file=... or text/a file path as arguments.")
+    if not sys.stdin.isatty():
+        data = sys.stdin.buffer.read()
+        if data:
+            return [data]
+    raise SystemExit("Nothing to print: pass --file=..., text/a file path as arguments, "
+                      "or pipe data in on stdin.")
 
 IMAGE_SIGNATURES = (
     (b'\xff\xd8\xff', 'JPEG'),
@@ -138,12 +147,23 @@ def detect_image_type(header: bytes):
     return None
 
 def resolve_print_source(file_arg):
-    """Resolve --file into either a loaded PIL Image, or text to render with create_text().
+    """Resolve one source into either a loaded PIL Image, or text to render with create_text().
 
-    Order of checks: existing JPEG/PNG/GIF file -> loaded as an image.
-    existing UTF-8 text file -> its contents as text.
-    otherwise -> file_arg itself is treated as literal text, with '\\n' turned into a line break.
+    file_arg is either raw bytes (piped in on stdin) or a str (a --file/positional value).
+    For bytes, or for a str that names an existing file: JPEG/PNG/GIF signature -> loaded as
+    an image; otherwise -> decoded as UTF-8 text.
+    For a str that doesn't name an existing file -> treated as literal text itself, with
+    '\\n' turned into a line break.
     """
+    if isinstance(file_arg, bytes):
+        data = file_arg
+        image_type = detect_image_type(data[:8])
+        if image_type:
+            return PIL.Image.open(io.BytesIO(data))
+        try:
+            return data.decode('utf-8')
+        except UnicodeDecodeError:
+            raise SystemExit("stdin data is neither a JPEG/PNG/GIF image nor UTF-8 text")
     path = Path(file_arg)
     if path.is_file():
         data = path.read_bytes()
@@ -217,7 +237,7 @@ def trimImage(im):
     if bbox:
         return im.crop((bbox[0],bbox[1],bbox[2],bbox[3]+10)) # don't cut off the end of the image
 
-def create_text(text, font_name="Lucon.ttf", font_size=12):
+def create_text(text, font_name="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size=12):
     img = PIL.Image.new('RGB', (printerWidth, 5000), color = (255, 255, 255))
     font = PIL.ImageFont.truetype(font_name, font_size)
     
