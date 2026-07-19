@@ -46,6 +46,19 @@ def parse_args():
     parser.add_argument('--sleep', type=float, metavar='SECONDS',
                          help=f"Delay between printer commands, in seconds, default 0.5 "
                               f"(overrides 'sleep' in {CONFIG_PATH})")
+    parser.add_argument('--bottom-margin', type=int, dest='bottom_margin', metavar='LINES',
+                         help=f"Blank line feeds printed after the last item, default 5 "
+                              f"(overrides 'bottom_margin' in {CONFIG_PATH})")
+    parser.add_argument('--file', action='append', metavar='PATH_OR_TEXT',
+                         help="A JPEG/PNG/GIF image file, a UTF-8 text file, or literal text "
+                              "to print if no such file exists. In literal text, '\\n' is "
+                              "turned into a line break. Can be given more than once to print "
+                              "several items in a row, with no bottom margin between them. "
+                              'Example: --file="Hello,\\nworld!"')
+    parser.add_argument('text', nargs='*',
+                         help="Used only when --file is not given: a file path or literal text "
+                              "to print, same rules as --file. Several words are joined with "
+                              "spaces into one string, e.g. cat-printer Hello, world\\!")
     return parser.parse_args()
 
 def resolve_mac(args, config):
@@ -62,6 +75,56 @@ def resolve_sleep(args, config):
     if args.sleep is not None:
         return args.sleep
     return config.getfloat('printer', 'sleep', fallback=0.5)
+
+def resolve_bottom_margin(args, config):
+    if args.bottom_margin is not None:
+        return args.bottom_margin
+    return config.getint('printer', 'bottom_margin', fallback=5)
+
+def resolve_sources(args):
+    """Return the list of raw --file/text values to print, in order."""
+    if args.file and args.text:
+        raise SystemExit("Use either --file or plain text arguments, not both.")
+    if args.file:
+        return args.file
+    if args.text:
+        return [" ".join(args.text)]
+    raise SystemExit("Nothing to print: pass --file=... or text/a file path as arguments.")
+
+IMAGE_SIGNATURES = (
+    (b'\xff\xd8\xff', 'JPEG'),
+    (b'\x89PNG\r\n\x1a\n', 'PNG'),
+    (b'GIF87a', 'GIF'),
+    (b'GIF89a', 'GIF'),
+)
+
+def detect_image_type(header: bytes):
+    """Return 'JPEG', 'PNG', or 'GIF' if header matches a known image signature, else None."""
+    for signature, kind in IMAGE_SIGNATURES:
+        if header.startswith(signature):
+            return kind
+    return None
+
+def resolve_print_source(file_arg):
+    """Resolve --file into either a loaded PIL Image, or text to render with create_text().
+
+    Order of checks: existing JPEG/PNG/GIF file -> loaded as an image.
+    existing UTF-8 text file -> its contents as text.
+    otherwise -> file_arg itself is treated as literal text, with '\\n' turned into a line break.
+    """
+    path = Path(file_arg)
+    if path.is_file():
+        data = path.read_bytes()
+        image_type = detect_image_type(data[:8])
+        if image_type:
+            return PIL.Image.open(path)
+        try:
+            return data.decode('utf-8')
+        except UnicodeDecodeError:
+            raise SystemExit(
+                f"'{file_arg}' exists but is neither a JPEG/PNG/GIF image "
+                f"nor a UTF-8 text file")
+    return file_arg.replace('\\n', '\n')
 
 
 
@@ -110,8 +173,8 @@ def getPrinterProductInfo(soc):
 def sendStartPrintSequence(soc):
     soc.send(b"\x1d\x49\xf0\x19")   
   
-def sendEndPrintSequence(soc):
-    soc.send(b"\x0a\x0a\x0a\x0a")
+def send_bottom_margin(soc, lines):
+    soc.send(b"\x0a" * lines)
     
     
 def trimImage(im):
@@ -193,14 +256,14 @@ def printImage(soc, im):
     sleep(sleep_between)
     soc.send(buf)
     sleep(sleep_between)
-    sendEndPrintSequence(soc)
-    sleep(sleep_between)
 
 
 config = load_config()
 args = parse_args()
 mac = resolve_mac(args, config)
 sleep_between = resolve_sleep(args, config)
+bottom_margin = resolve_bottom_margin(args, config)
+sources = resolve_sources(args)
 
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 s.connect((mac,port))
@@ -214,15 +277,18 @@ try:
     getPrinterProductInfo(s)
     sleep(sleep_between)
 
-    #Read Image File
-    #img = PIL.Image.open("Turtle.jpg")
+    for i, raw in enumerate(sources):
+        source = resolve_print_source(raw)
+        if isinstance(source, PIL.Image.Image):
+            img = source
+        else:
+            img = create_text(source, font_size=12)
 
-    #Create image from text
-    text = "Line 1"
-    img = create_text(text,font_size=12)
+        printImage(s,img)
 
-
-    printImage(s,img)
+        if i == len(sources) - 1:
+            send_bottom_margin(s, bottom_margin)
+            sleep(sleep_between)
 finally:
     s.close()
 
