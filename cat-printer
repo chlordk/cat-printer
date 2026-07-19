@@ -131,7 +131,7 @@ def printImage(soc, im):
         
     # if image width is not a multiple of 8 pixels, fix that
     if im.size[0] % 8:
-        im2 = Image.new('1', (im.size[0] + 8 - im.size[0] % 8, 
+        im2 = PIL.Image.new('1', (im.size[0] + 8 - im.size[0] % 8, 
                         im.size[1]), 'white')
         im2.paste(im, (0, 0))
         im = im2
@@ -163,22 +163,24 @@ def printImage(soc, im):
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 s.connect((printerMACAddress,port))
 
-print("Connecting to printer...")
-getPrinterStatus(s)
-sleep(0.5)
-getPrinterSerialNumber(s)
-sleep(0.5)
-getPrinterProductInfo(s)
-sleep(0.5)
+try:
+    print("Connecting to printer...")
+    getPrinterStatus(s)
+    sleep(0.5)
+    getPrinterSerialNumber(s)
+    sleep(0.5)
+    getPrinterProductInfo(s)
+    sleep(0.5)
 
-#Read Image File
-#img = PIL.Image.open("Turtle.jpg")
+    #Read Image File
+    #img = PIL.Image.open("Turtle.jpg")
 
-#Create image from text
-text = "Line 1"
-img = create_text(text,font_size=12)
+    #Create image from text
+    text = "Line 1"
+    img = create_text(text,font_size=12)
 
 
-printImage(s,img)
-s.close()
+    printImage(s,img)
+finally:
+    s.close()
 
