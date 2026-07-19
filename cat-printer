@@ -12,19 +12,48 @@ Copyright
 License GPLv3
 """
 
+import argparse
+import configparser
+import re
 import socket
 import PIL.Image
 import PIL.ImageDraw
 import PIL.ImageFont
 import PIL.ImageChops
 import PIL.ImageOps
+from pathlib import Path
 from time import sleep
 import struct
 
 
-printerMACAddress = 'XX:XX:XX:XX:XX:XX'
 printerWidth = 384
 port = 2
+
+CONFIG_PATH = Path.home() / ".config" / "cat-printer" / "config"
+MAC_RE = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
+
+def load_config():
+    config = configparser.ConfigParser()
+    if CONFIG_PATH.exists():
+        config.read(CONFIG_PATH)
+    return config
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Print images and text on YHK/Cat Bluetooth thermal printers.")
+    parser.add_argument('--mac', metavar='XX:XX:XX:XX:XX:XX',
+                         help=f"Bluetooth MAC address of the printer "
+                              f"(overrides 'mac' in {CONFIG_PATH})")
+    return parser.parse_args()
+
+def resolve_mac(args, config):
+    mac = args.mac or config.get('printer', 'mac', fallback=None)
+    if not mac:
+        raise SystemExit(
+            f"No MAC address given. Pass --mac=XX:XX:XX:XX:XX:XX or set it "
+            f"under [printer] in {CONFIG_PATH}")
+    if not MAC_RE.match(mac):
+        raise SystemExit(f"'{mac}' doesn't look like a MAC address (expected XX:XX:XX:XX:XX:XX)")
+    return mac
 
 
 
@@ -160,8 +189,12 @@ def printImage(soc, im):
     sleep(.5)
 
 
+config = load_config()
+args = parse_args()
+mac = resolve_mac(args, config)
+
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-s.connect((printerMACAddress,port))
+s.connect((mac,port))
 
 try:
     print("Connecting to printer...")
