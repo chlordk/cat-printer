@@ -52,7 +52,7 @@ def parse_args():
                          help=f"Blank line feeds printed after the last item, default 5 "
                               f"(overrides 'bottom_margin' in {CONFIG_PATH})")
     parser.add_argument('--font', metavar='PATH',
-                         help=f"Path to a TrueType font file, default 'Lucon.ttf' "
+                         help=f"Path to a TrueType font file, default '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf' "
                               f"(overrides 'font' in {CONFIG_PATH})")
     parser.add_argument('--font-size', type=int, dest='font_size', metavar='SIZE',
                          help=f"Font size in points, default 12 "
@@ -96,7 +96,7 @@ def resolve_bottom_margin(args, config):
     return config.getint('printer', 'bottom_margin', fallback=5)
 
 def resolve_font(args, config):
-    return args.font or config.get('printer', 'font', fallback='Lucon.ttf')
+    return args.font or config.get('printer', 'font', fallback='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
 
 def resolve_font_size(args, config):
     if args.font_size is not None:
