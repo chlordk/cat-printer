@@ -49,12 +49,18 @@ def parse_args():
     parser.add_argument('--bottom-margin', type=int, dest='bottom_margin', metavar='LINES',
                          help=f"Blank line feeds printed after the last item, default 5 "
                               f"(overrides 'bottom_margin' in {CONFIG_PATH})")
+    parser.add_argument('--font', metavar='PATH',
+                         help=f"Path to a TrueType font file, default 'Lucon.ttf' "
+                              f"(overrides 'font' in {CONFIG_PATH})")
+    parser.add_argument('--font-size', type=int, dest='font_size', metavar='SIZE',
+                         help=f"Font size in points, default 12 "
+                              f"(overrides 'font_size' in {CONFIG_PATH})")
     parser.add_argument('--file', action='append', metavar='PATH_OR_TEXT',
                          help="A JPEG/PNG/GIF image file, a UTF-8 text file, or literal text "
                               "to print if no such file exists. In literal text, '\\n' is "
                               "turned into a line break. Can be given more than once to print "
                               "several items in a row, with no bottom margin between them. "
-                              'Example: --file="Hello,\\nworld!"')
+                              'Example: --file="Hello,\\nworld\\!"')
     parser.add_argument('text', nargs='*',
                          help="Used only when --file is not given: a file path or literal text "
                               "to print, same rules as --file. Several words are joined with "
@@ -80,6 +86,14 @@ def resolve_bottom_margin(args, config):
     if args.bottom_margin is not None:
         return args.bottom_margin
     return config.getint('printer', 'bottom_margin', fallback=5)
+
+def resolve_font(args, config):
+    return args.font or config.get('printer', 'font', fallback='Lucon.ttf')
+
+def resolve_font_size(args, config):
+    if args.font_size is not None:
+        return args.font_size
+    return config.getint('printer', 'font_size', fallback=12)
 
 def resolve_sources(args):
     """Return the list of raw --file/text values to print, in order."""
@@ -263,6 +277,8 @@ args = parse_args()
 mac = resolve_mac(args, config)
 sleep_between = resolve_sleep(args, config)
 bottom_margin = resolve_bottom_margin(args, config)
+font = resolve_font(args, config)
+font_size = resolve_font_size(args, config)
 sources = resolve_sources(args)
 
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
@@ -282,7 +298,7 @@ try:
         if isinstance(source, PIL.Image.Image):
             img = source
         else:
-            img = create_text(source, font_size=12)
+            img = create_text(source, font_name=font, font_size=font_size)
 
         printImage(s,img)
 
