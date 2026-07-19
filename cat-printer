@@ -43,6 +43,9 @@ def parse_args():
     parser.add_argument('--mac', metavar='XX:XX:XX:XX:XX:XX',
                          help=f"Bluetooth MAC address of the printer "
                               f"(overrides 'mac' in {CONFIG_PATH})")
+    parser.add_argument('--sleep', type=float, metavar='SECONDS',
+                         help=f"Delay between printer commands, in seconds, default 0.5 "
+                              f"(overrides 'sleep' in {CONFIG_PATH})")
     return parser.parse_args()
 
 def resolve_mac(args, config):
@@ -54,6 +57,11 @@ def resolve_mac(args, config):
     if not MAC_RE.match(mac):
         raise SystemExit(f"'{mac}' doesn't look like a MAC address (expected XX:XX:XX:XX:XX:XX)")
     return mac
+
+def resolve_sleep(args, config):
+    if args.sleep is not None:
+        return args.sleep
+    return config.getfloat('printer', 'sleep', fallback=0.5)
 
 
 
@@ -180,18 +188,19 @@ def printImage(soc, im):
                                                                   int(im.size[1] / 256)), 
                                                                   im.tobytes()))
     initilizePrinter(soc)  
-    sleep(.5)    
+    sleep(sleep_between)
     sendStartPrintSequence(soc)
-    sleep(.5)
+    sleep(sleep_between)
     soc.send(buf)
-    sleep(.5)
+    sleep(sleep_between)
     sendEndPrintSequence(soc)
-    sleep(.5)
+    sleep(sleep_between)
 
 
 config = load_config()
 args = parse_args()
 mac = resolve_mac(args, config)
+sleep_between = resolve_sleep(args, config)
 
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
 s.connect((mac,port))
@@ -199,11 +208,11 @@ s.connect((mac,port))
 try:
     print("Connecting to printer...")
     getPrinterStatus(s)
-    sleep(0.5)
+    sleep(sleep_between)
     getPrinterSerialNumber(s)
-    sleep(0.5)
+    sleep(sleep_between)
     getPrinterProductInfo(s)
-    sleep(0.5)
+    sleep(sleep_between)
 
     #Read Image File
     #img = PIL.Image.open("Turtle.jpg")
