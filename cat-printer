@@ -179,10 +179,9 @@ def resolve_print_source(file_arg):
 
 class Printer:
     """Bluetooth interface to the printer."""
-    def __init__(self, mac, channel=2, width=384):
+    def __init__(self, mac, channel=2):
         self.mac=mac
         self.channel=channel
-        self.width=width
         self.sock=None
     def connect(self):
         self.sock=socket.socket(socket.AF_BLUETOOTH,socket.SOCK_STREAM,socket.BTPROTO_RFCOMM)
@@ -201,29 +200,8 @@ class Printer:
         self.sock.send(b"\x1d\x67\x69"); return self.sock.recv(16)
     def _start_print(self):
         self.sock.send(b"\x1d\x49\xf0\x19")
-    def _end_print(self):
-        self.sock.send(b"\x0a")
-
-def initilizePrinter(soc):
-    soc.send(b"\x1b\x40")
-
-def getPrinterStatus(soc):
-    soc.send(b"\x1e\x47\x03")
-    return soc.recv(38)
-
-def getPrinterSerialNumber(soc):
-    soc.send(b"\x1D\x67\x39")
-    return soc.recv(21)
-
-def getPrinterProductInfo(soc):
-    soc.send(b"\x1d\x67\x69")
-    return soc.recv(16)
-
-def sendStartPrintSequence(soc):
-    soc.send(b"\x1d\x49\xf0\x19")
-
-def send_bottom_margin(soc, lines):
-    soc.send(b"\x0a" * lines)
+    def _end_print(self, lines=1):
+        self.sock.send(b"\x0a" * lines)
 
 def trimImage(im):
     bg = PIL.Image.new(im.mode, im.size, (255,255,255))
@@ -256,7 +234,7 @@ def get_wrapped_text(text: str, font: PIL.ImageFont.ImageFont,
             lines.append(word)
     return '\n'.join(lines)
 
-def printImage(soc, im):
+def printImage(printer, im):
     if im.width > printerWidth:
         # image is wider than printer resolution; scale it down proportionately
         height = int(im.height * (printerWidth / im.width))
@@ -293,11 +271,11 @@ def printImage(soc, im):
                                                       struct.pack('2B', int(im.size[1] % 256),
                                                                   int(im.size[1] / 256)),
                                                                   im.tobytes()))
-    initilizePrinter(soc)
+    printer.initialize()
     sleep(sleep_between)
-    sendStartPrintSequence(soc)
+    printer._start_print()
     sleep(sleep_between)
-    soc.send(buf)
+    printer.sock.send(buf)
     sleep(sleep_between)
 
 
@@ -312,17 +290,17 @@ printerWidth = resolve_width(args, config)
 port = resolve_port(args, config)
 sources = resolve_sources(args)
 
-s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-s.connect((mac,port))
+printer = Printer(mac, port)
+printer.connect()
 
 try:
     if args.verbose:
         print("Connecting to printer...")
-    getPrinterStatus(s)
+    printer.status()
     sleep(sleep_between)
-    getPrinterSerialNumber(s)
+    printer.serial_number()
     sleep(sleep_between)
-    getPrinterProductInfo(s)
+    printer.product_info()
     sleep(sleep_between)
 
     for i, raw in enumerate(sources):
@@ -332,11 +310,11 @@ try:
         else:
             img = create_text(source, font_name=font, font_size=font_size)
 
-        printImage(s,img)
+        printImage(printer,img)
 
         if i == len(sources) - 1:
-            send_bottom_margin(s, bottom_margin)
+            printer._end_print(bottom_margin)
             sleep(sleep_between)
 finally:
-    s.close()
+    printer.close()
 
