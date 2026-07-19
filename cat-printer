@@ -27,6 +27,34 @@ printerWidth = 384
 port = 2
 
 
+
+class Printer:
+    """Bluetooth interface to the printer."""
+    def __init__(self, mac, channel=2, width=384):
+        self.mac=mac
+        self.channel=channel
+        self.width=width
+        self.sock=None
+    def connect(self):
+        self.sock=socket.socket(socket.AF_BLUETOOTH,socket.SOCK_STREAM,socket.BTPROTO_RFCOMM)
+        self.sock.connect((self.mac,self.channel))
+    def close(self):
+        if self.sock:
+            self.sock.close()
+            self.sock=None
+    def initialize(self):
+        self.sock.send(b"\x1b\x40")
+    def status(self):
+        self.sock.send(b"\x1e\x47\x03"); return self.sock.recv(38)
+    def serial_number(self):
+        self.sock.send(b"\x1d\x67\x39"); return self.sock.recv(21)
+    def product_info(self):
+        self.sock.send(b"\x1d\x67\x69"); return self.sock.recv(16)
+    def _start_print(self):
+        self.sock.send(b"\x1d\x49\xf0\x19")
+    def _end_print(self):
+        self.sock.send(b"\x0a")
+
 def initilizePrinter(soc):
     soc.send(b"\x1b\x40")
     
@@ -144,11 +172,11 @@ getPrinterProductInfo(s)
 sleep(0.5)
 
 #Read Image File
-img = PIL.Image.open("Turtle.jpg")
+#img = PIL.Image.open("Turtle.jpg")
 
 #Create image from text
-#text = "Line 1\nLine 2\nLine 3"
-#img = create_text(text,font_size=65)
+text = "Line 1"
+img = create_text(text,font_size=12)
 
 
 printImage(s,img)
