@@ -43,6 +43,9 @@ def parse_args():
     parser.add_argument('--version', action='version', version=f'%(prog)s {VERSION}')
     parser.add_argument('--verbose', action='store_true',
                          help="Print progress messages while connecting and printing")
+    parser.add_argument('--status', action='store_true',
+                         help="Query the printer's serial number, product info, and status, "
+                              "print them, then exit without printing anything")
     parser.add_argument('--mac', metavar='XX:XX:XX:XX:XX:XX',
                          help=f"Bluetooth MAC address of the printer "
                               f"(overrides 'mac' in {CONFIG_PATH})")
@@ -144,6 +147,10 @@ def detect_image_type(header: bytes):
         if header.startswith(signature):
             return kind
     return None
+
+def decode_reply(data: bytes):
+    """Decode a raw printer reply into a clean string, dropping the trailing NUL padding."""
+    return data.decode('utf-8', errors='replace').rstrip('\x00')
 
 def resolve_print_source(file_arg):
     """Resolve one source into either a loaded PIL Image, or text to render with create_text().
@@ -288,7 +295,6 @@ font = resolve_font(args, config)
 font_size = resolve_font_size(args, config)
 printerWidth = resolve_width(args, config)
 port = resolve_port(args, config)
-sources = resolve_sources(args)
 
 printer = Printer(mac, port)
 printer.connect()
@@ -296,13 +302,20 @@ printer.connect()
 try:
     if args.verbose:
         print("Connecting to printer...")
+
+    if args.status:
+        serial = printer.serial_number()
+        product = printer.product_info()
+        status = printer.status()
+        print(f"Serial number: {decode_reply(serial)}")
+        print(f"Product info:  {decode_reply(product)}")
+        print(f"Status:        {decode_reply(status)}")
+        sys.exit(0)
+
     printer.status()
     sleep(sleep_between)
-    printer.serial_number()
-    sleep(sleep_between)
-    printer.product_info()
-    sleep(sleep_between)
 
+    sources = resolve_sources(args)
     for i, raw in enumerate(sources):
         source = resolve_print_source(raw)
         if isinstance(source, PIL.Image.Image):
