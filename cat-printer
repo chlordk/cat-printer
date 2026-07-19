@@ -26,9 +26,6 @@ from time import sleep
 import struct
 
 
-printerWidth = 384
-port = 2
-
 VERSION = '1.0.0'
 
 CONFIG_PATH = Path.home() / ".config" / "cat-printer" / "config"
@@ -60,6 +57,12 @@ def parse_args():
     parser.add_argument('--font-size', type=int, dest='font_size', metavar='SIZE',
                          help=f"Font size in points, default 12 "
                               f"(overrides 'font_size' in {CONFIG_PATH})")
+    parser.add_argument('--width', type=int, metavar='PIXELS',
+                         help=f"Printer resolution in pixels, default 384 "
+                              f"(overrides 'width' in {CONFIG_PATH})")
+    parser.add_argument('--port', type=int, metavar='CHANNEL',
+                         help=f"Bluetooth RFCOMM channel, default 2 "
+                              f"(overrides 'port' in {CONFIG_PATH})")
     parser.add_argument('--file', action='append', metavar='PATH_OR_TEXT',
                          help="A JPEG/PNG/GIF image file, a UTF-8 text file, or literal text "
                               "to print if no such file exists. In literal text, '\\n' is "
@@ -99,6 +102,16 @@ def resolve_font_size(args, config):
     if args.font_size is not None:
         return args.font_size
     return config.getint('printer', 'font_size', fallback=12)
+
+def resolve_width(args, config):
+    if args.width is not None:
+        return args.width
+    return config.getint('printer', 'width', fallback=384)
+
+def resolve_port(args, config):
+    if args.port is not None:
+        return args.port
+    return config.getint('printer', 'port', fallback=2)
 
 def resolve_sources(args):
     """Return the list of raw --file/text values to print, in order."""
@@ -284,6 +297,8 @@ sleep_between = resolve_sleep(args, config)
 bottom_margin = resolve_bottom_margin(args, config)
 font = resolve_font(args, config)
 font_size = resolve_font_size(args, config)
+printerWidth = resolve_width(args, config)
+port = resolve_port(args, config)
 sources = resolve_sources(args)
 
 s = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
