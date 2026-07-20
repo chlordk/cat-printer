@@ -1,53 +1,167 @@
-# YHK-Cat-Thermal-Printer
+# cat-printer
 
-Mini **cat/rabbit** **thermal** printer of the **YHK** type
+Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts.
 
-<img src="https://raw.githubusercontent.com/abhigkar/YHK-Cat-Thermal-Printer/main/images/Cat-printer.jpeg"  width="300">
-<img src="https://raw.githubusercontent.com/abhigkar/YHK-Cat-Thermal-Printer/main/images/default-test-print.png"  width="300">
+## Table of Contents
 
-This is yet another project with a **Cat/Rabbit thermal printer**. Other GitHub sources are also accessible, however none of them were successful for me because they all used the Cat-Printer with BLE protocol.
+- [Usage](#usage)
+  - [Options](#options)
+- [Install](#install)
+  - [Configuration](#configuration)
+- [Debug](#debug)
+- [Credit](#credit)
 
-Unfortunately, my cat-printer uses a different firmware version that is based on the Classic bluetooth protocol rather than the GATT based protocol. **YHK-XXXX** was broadcast by my printer. The last four characters of the printer's **MAC address** are XXXX.
+## Usage
 
-The Android and iOS app named **WalkPrint** is compatible with my cat printer. Although the app is worthless, some features need logging in.
+```
+cat-printer [OPTIONS] [TEXT ...]
+```
 
-My starting point: I was motivated from [This blogpost](https://werwolv.net/blog/cat_printerhttps:/) and planned to have my own printer. I did spent some time working on the [bitbank2/Thermal_Printer](https://github.com/bitbank2/Thermal_Printer) project, but I soon found that since my printer is different so no other code will run on it.
+Print plain text:
 
-You can also read the full product review [here](https://hackspace.raspberrypi.com/articles/bluetooth-cat-thermal-printer-review)
+```bash
+cat-printer "Hello, world!"
+```
 
-Other reference projects [repositories](https://github.com/JJJollyjim/catprinter)
+Several words on the command line are joined with a space into one string:
 
-* [bitbank2/Thermal_Printer](https://github.com/bitbank2/Thermal_Printer)
-* [WerWolv/PythonCatPrinter](https://github.com/WerWolv/PythonCatPrinter)
-* [amber-sixel/PythonCatPrinter](https://github.com/amber-sixel/PythonCatPrinter)
-* [the6p4c/catteprinter](https://github.com/the6p4c/catteprinter)
-* [JJJollyjim/PyCatte](https://github.com/JJJollyjim/PyCatte)
-* [xssfox](https://gist.github.com/xssfox/b911e0781a763d258d21262c5fdd2dec)
+```bash
+cat-printer Hello, world.
+```
 
-### Some real work of RE 🚀️
+Print an image (JPEG, PNG, and GIF are auto-detected by file content, not by extension). When a text is detected as an existing file it will be treated as a file otherwise as a text:
 
-In order to obtain certain internals, I have started my own reverse engineering.
+```bash
+cat-printer photo.jpg
+```
 
-To examine the packet exchange between the phone and the printer, I decompiled the Android app, grabbed the BT snoop log from my phone, and then opened the log file in WireShark. And indeed, the BLE/GATT-based system was not the cause. Decompiled code for Android supports that.
+For the best result, it is recommended to edit the image first with a graphic
+tool like [Gimp](https://www.gimp.org/) or the like.
+Make the image black and white and scale down to 384 pixels wide.
+Color and gray scale images should be diffused with 
+Floyd–Steinberg dithering, Jarvis, Judice, Ninke or other dithering methods.
 
-### Action Replay 😄
+Print a text file:
 
-Therefore, everything is straightforward. I attempted to send the same commands and data packets from my dependable Raspberry Pi Zero W through RFCOMM on the terminal based on the WirteShark logs. I finally succeeded in printing the identical image that was on my phone after a few failed attempts. In action replaySo things are simple. Based on the WirteShark logs, I tried to send the same commands/data paylods from my trusty **Raspberry pi Zero W** via **RFCOMM** on terminal. After few trial, I was able to print the same image as it was from my phone.
+```bash
+cat-printer notes.txt
+```
 
-### The Final Result 👀️
+Pipe data in on stdin — also auto-detected as image or text:
 
-To make this functional, the next task was to produce the data payload from my script. I went back and pulled three routines from the decompiled code to capture the BITMAP, transform it to 1 Bit pictures, and append some bytes as file headers. This step was more difficult because I was only able to obtain the function name. I then tried writing the similler routines in some other Python code, and it succeeded.
+```bash
+cat my-file.txt | cat-printer
+cat receipt.png | cat-printer
+```
 
-### How to use the script? 🎉️
+Use `--file` to print several items back-to-back in one job, with no bottom margin between them (only after the last one):
 
-1. Scan the MAC address of your printer using Bluetoothctl
-2. Run scan on if printer found run pair xx:xx:xx:xx:xx:xx ADDR and trust xx:xx:xx:xx:xx:xx
-3. Exit bluetoothctl
-4. Run sdptool add --channel=N SP, where **"N"** is the channel, remember this as you will need this in the script. I have selected 2 in my case.
-5. Run sudo rfcomm bind **N** xx:xx:xx:xx:xx:xx, N  = channel = port
-6. Run cat-printer.py
-7. 
+```bash
+cat-printer --file=logo.png --file="Order #1234" --file=receipt.txt
+```
 
-### Notes: Usefull commands
-sdptool add --channel=2 SP
-sudo rfcomm connect /dev/rfcomm0 XX:XX:XX:XX:XX:XX 2
+Use `--` to stop option parsing, so text starting with `-` isn't mistaken for a flag:
+
+```bash
+cat-printer -- --this is not an option
+```
+
+Check the printer's serial number, product info, and status without printing anything:
+
+```bash
+cat-printer --status
+```
+
+Get help or the installed version:
+
+```bash
+cat-printer --help
+cat-printer --version
+```
+
+### Options
+
+| Option | Default | Description |
+|---|---|---|
+| `--mac XX:XX:XX:XX:XX:XX` | — | Bluetooth MAC address of the printer (**required**, here or in the config file) |
+| `--file PATH_OR_TEXT` | — | Image file, text file, or literal text to print. Repeatable. |
+| `--sleep SECONDS` | `0.5` | Delay between printer commands |
+| `--bottom-margin LINES` | `5` | Blank line feeds printed after the last item |
+| `--font PATH` | `/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf` | TrueType font used to render text |
+| `--font-size SIZE` | `12` | Font size in points |
+| `--width PIXELS` | `384` | Printer resolution in pixels |
+| `--port CHANNEL` | `2` | Bluetooth RFCOMM channel |
+| `--verbose` | off | Print progress messages (MAC used, config file found, input source, font, etc.) |
+| `--status` | off | Print serial number/product info/status and exit |
+| `--version` | — | Show version and exit |
+
+Command-line options always override the config file; the config file overrides the built-in defaults.
+
+## Install
+
+### Requirements
+
+- Python 3
+- [Pillow](https://pypi.org/project/Pillow/)
+- A Linux system with Bluetooth/RFCOMM support
+- The printer paired over Bluetooth beforehand (e.g. via `bluetoothctl`)
+
+### Steps
+
+```bash
+git clone https://github.com/fun6400/cat-printer.git
+cd cat-printer
+pip install Pillow --break-system-packages
+```
+
+Optionally make it available on your `PATH`:
+
+```bash
+chmod +x cat-printer
+sudo ln -s "$(pwd)/cat-printer" /usr/local/bin/cat-printer
+```
+
+### Configuration
+
+To avoid passing `--mac` (and other options) every time, create `~/.config/cat-printer/config`:
+
+```ini
+[printer]
+mac = AA:BB:CC:DD:EE:FF
+sleep = 0.5
+bottom_margin = 5
+font = /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
+font_size = 12
+width = 384
+port = 2
+```
+
+Only `mac` is required; everything else falls back to its built-in default if omitted.
+
+## Debug
+
+Run with `--verbose` to see what the script is doing at each step — which config file (if any) was found, which MAC address is being used, how the input source was detected, which font was loaded, and when the printer connection is closed:
+
+```bash
+cat-printer --verbose "Hello, world!"
+```
+
+Use `--status` to confirm the Bluetooth connection works and read back the printer's serial number, product info, and firmware/voltage/DPI status without printing anything:
+
+```bash
+cat-printer --status
+```
+
+Common issues:
+
+- **No MAC address given** — pass `--mac=XX:XX:XX:XX:XX:XX` or set `mac` under `[printer]` in the config file.
+- **Connection refused / device not found** — make sure the printer is powered on, paired, and in range; re-pair it with `bluetoothctl` if needed.
+- **Garbled or blank output** — try increasing `--sleep`, or double-check `--width` matches your printer's actual resolution.
+- **`'...' is neither a JPEG/PNG/GIF image nor a UTF-8 text file`** — the given file isn't a supported image format and also isn't valid UTF-8 text.
+
+## Credit
+
+- 2024 Abhinav Golwalkar — [YHK-Cat-Thermal-Printer](https://github.com/abhigkar/YHK-Cat-Thermal-Printer)
+- 2026 Hans Schou — [cat-printer](https://github.com/fun6400/cat-printer)
+
+Licensed under GPLv3.
