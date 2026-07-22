@@ -1,6 +1,10 @@
 # cat-printer
 
-Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts.
+Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux.
+
+![Denver MBP-32B](images/Denver-mbp-32b.webp) "Denver MBP-32B"
+![Cat-printer](images/Cat-printer.jpeg) "Cat-printer"
+![System info print](images/default-test-print.png) "System information print"
 
 ## Table of Contents
 
@@ -14,7 +18,7 @@ Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Den
 ## Usage
 
 ```
-cat-printer [OPTIONS] [TEXT ...]
+cat-printer [OPTIONS] [FILE/TEXT ...]
 ```
 
 Print plain text:
@@ -133,6 +137,16 @@ sudo ln -s "$(pwd)/cat-printer" /usr/local/bin/cat-printer
 ### Configuration
 
 The printers MAC address can be found by double-clicking the printer's power button and it prints its own MAC.
+
+With `bluez` package installed the MAC address can be found with `hcitool`:
+
+```bash
+$ hcitool inq
+Inquiring ...
+	25:00:35:00:9B:E9	clock offset: 0x7838	class: 0x10091c
+```
+
+Look for the class `0x10091c`.
 
 To avoid passing `--mac` (and other options) every time, create `~/.config/cat-printer/config`:
 
