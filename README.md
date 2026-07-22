@@ -94,6 +94,7 @@ cat-printer --version
 | `--mac XX:XX:XX:XX:XX:XX` | — | Bluetooth MAC address of the printer (**required**, here or in the config file) |
 | `--file PATH_OR_TEXT` | — | Image file, text file, or literal text to print. Repeatable. |
 | `--sleep SECONDS` | `0.5` | Delay between printer commands |
+| `--rotate DEGREES` | `0` | Degrees to rotate image or text |
 | `--bottom-margin LINES` | `5` | Blank line feeds printed after the last item |
 | `--font PATH` | `/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf` | TrueType font used to render text |
 | `--font-size SIZE` | `12` | Font size in points |

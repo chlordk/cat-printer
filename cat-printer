@@ -54,6 +54,9 @@ def parse_args():
     parser.add_argument('--mac', metavar='XX:XX:XX:XX:XX:XX',
                          help=f"Bluetooth MAC address of the printer "
                               f"(overrides 'mac' in {CONFIG_PATH})")
+    parser.add_argument('--rotate', type=int, dest='rotate', metavar='DEGREES',
+                         help=f"Rotate image, default 0. Upside down is 180°. "
+                              f"(overrides 'rotate' in {CONFIG_PATH})")
     parser.add_argument('--sleep', type=float, metavar='SECONDS',
                          help=f"Delay between printer commands, in seconds, default 0.5 "
                               f"(overrides 'sleep' in {CONFIG_PATH})")
@@ -111,6 +114,11 @@ def resolve_bottom_margin(args, config):
     if args.bottom_margin is not None:
         return args.bottom_margin
     return config.getint('printer', 'bottom_margin', fallback=5)
+
+def resolve_rotate(args, config):
+    if args.rotate is not None:
+        return args.rotate
+    return config.getint('printer', 'rotate', fallback=0)
 
 def resolve_font(args, config):
     return args.font or config.get('printer', 'font', fallback='/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
@@ -268,6 +276,9 @@ def printImage(printer, im):
         padded_image.paste(im)
         im = padded_image
 
+    if args.rotate:
+        im = im.rotate(args.rotate)
+
     if im.mode != '1':
         im = im.convert('1')
 
@@ -298,6 +309,7 @@ if args.verbose:
     print(f"Using MAC address: {mac}")
 sleep_between = resolve_sleep(args, config)
 bottom_margin = resolve_bottom_margin(args, config)
+rotate = resolve_rotate(args, config)
 font = resolve_font(args, config)
 font_size = resolve_font_size(args, config)
 printerWidth = resolve_width(args, config)
