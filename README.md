@@ -91,18 +91,18 @@ cat-printer --version
 
 | Option | Default | Description |
 |---|---|---|
-| `--mac XX:XX:XX:XX:XX:XX` | — | Bluetooth MAC address of the printer (**required**, here or in the config file) |
-| `--file PATH_OR_TEXT` | — | Image file, text file, or literal text to print. Repeatable. |
-| `--sleep SECONDS` | `0.5` | Delay between printer commands |
-| `--rotate DEGREES` | `0` | Degrees to rotate image or text |
+| `--mac XX:XX:XX:XX:XX:XX` | — | Bluetooth MAC address of the printer (**required**, here or in the config file). Find it by double-clicking the printer's power button — it prints its own MAC. |
 | `--bottom-margin LINES` | `5` | Blank line feeds printed after the last item |
+| `--file PATH_OR_TEXT` | — | Image file, text file, or literal text to print. Repeatable. |
 | `--font PATH` | `/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf` | TrueType font used to render text |
 | `--font-size SIZE` | `12` | Font size in points |
-| `--width PIXELS` | `384` | Printer resolution in pixels |
 | `--port CHANNEL` | `2` | Bluetooth RFCOMM channel |
-| `--verbose` | off | Print progress messages (MAC used, config file found, input source, font, etc.) |
+| `--rotate DEGREES` | `0` | Degrees to rotate image or text |
+| `--sleep SECONDS` | `0.5` | Delay between printer commands |
 | `--status` | off | Print serial number/product info/status and exit |
+| `--verbose` | off | Print progress messages (MAC used, config file found, input source, font, etc.) |
 | `--version` | — | Show version and exit |
+| `--width PIXELS` | `384` | Printer resolution in pixels |
 
 Command-line options always override the config file; the config file overrides the built-in defaults.
 
@@ -118,9 +118,9 @@ Command-line options always override the config file; the config file overrides 
 ### Steps
 
 ```bash
-git clone https://github.com/fun6400/cat-printer.git
+git clone https://github.com/chlordk/cat-printer.git
 cd cat-printer
-pip install Pillow --break-system-packages
+sudo apt-get install python3-pil # Pillow image library
 ```
 
 Optionally make it available on your `PATH`:
@@ -132,17 +132,20 @@ sudo ln -s "$(pwd)/cat-printer" /usr/local/bin/cat-printer
 
 ### Configuration
 
+The printers MAC address can be found by double-clicking the printer's power button and it prints its own MAC.
+
 To avoid passing `--mac` (and other options) every time, create `~/.config/cat-printer/config`:
 
 ```ini
 [printer]
-mac = AA:BB:CC:DD:EE:FF
-sleep = 0.5
+mac = 01:23:45:AB:CD:EF
 bottom_margin = 5
 font = /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
 font_size = 12
-width = 384
 port = 2
+rotate = 0
+sleep = 0.5
+width = 384
 ```
 
 Only `mac` is required; everything else falls back to its built-in default if omitted.
@@ -152,6 +155,7 @@ Only `mac` is required; everything else falls back to its built-in default if om
 Run with `--verbose` to see what the script is doing at each step — which config file (if any) was found, which MAC address is being used, how the input source was detected, which font was loaded, and when the printer connection is closed:
 
 ```bash
+cat-printer --verbose --status
 cat-printer --verbose "Hello, world!"
 ```
 
@@ -163,6 +167,7 @@ cat-printer --status
 
 Common issues:
 
+- **Printer turned off** — Turn printer on.
 - **No MAC address given** — pass `--mac=XX:XX:XX:XX:XX:XX` or set `mac` under `[printer]` in the config file.
 - **Connection refused / device not found** — make sure the printer is powered on, paired, and in range; re-pair it with `bluetoothctl` if needed.
 - **Garbled or blank output** — try increasing `--sleep`, or double-check `--width` matches your printer's actual resolution.
@@ -171,6 +176,6 @@ Common issues:
 ## Credit
 
 - 2024 Abhinav Golwalkar — [YHK-Cat-Thermal-Printer](https://github.com/abhigkar/YHK-Cat-Thermal-Printer)
-- 2026 Hans Schou — [cat-printer](https://github.com/fun6400/cat-printer)
+- 2026 Hans Schou — [cat-printer](https://github.com/chlordk/cat-printer)
 
 Licensed under GPLv3.

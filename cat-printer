@@ -7,7 +7,7 @@ Print images and text on YHK/Cat Bluetooth thermal printers.
 
 Copyright
   * 2024 Abhinav Golwalkar https://github.com/abhigkar/YHK-Cat-Thermal-Printer
-  * 2026 Hans Schou https://github.com/fun6400/cat-printer
+  * 2026 Hans Schou https://github.com/chlordk/cat-printer
 
 License GPLv3
 """
@@ -350,4 +350,4 @@ try:
 finally:
     printer.close()
     if args.verbose:
-        print("Printer closed")
+        print("Printing completed.")
