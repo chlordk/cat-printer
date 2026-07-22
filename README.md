@@ -38,7 +38,7 @@ cat-printer photo.jpg
 For the best result, it is recommended to edit the image first with a graphic
 tool like [Gimp](https://www.gimp.org/) or the like.
 Make the image black and white and scale down to 384 pixels wide.
-Color and gray scale images should be diffused with 
+Color and gray scale images should be diffused with
 Floyd–Steinberg dithering, Jarvis, Judice, Ninke or other dithering methods.
 
 Print a text file:
@@ -70,6 +70,14 @@ Check the printer's serial number, product info, and status without printing any
 
 ```bash
 cat-printer --status
+```
+
+Example output:
+
+```
+Serial number: sn:CCHW250035109BD9.
+Product info:  public id:0212.
+Status:        HV=H1.0,SV=V1.01,VOLT=7800mv,DPI=384,
 ```
 
 Get help or the installed version:
