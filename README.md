@@ -3,12 +3,15 @@
 Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux.
 
 ![Denver MBP-32B](images/Denver-mbp-32b.webp)
+
 Denver MBP-32B
 
 ![Cat-printer](images/Cat-printer.jpeg)
+
 Cat-printer
 
 ![System info print](images/default-test-print.png)
+
 System information print with MAC address A1:D1:E2:00:B9:AA
 
 ## Table of Contents
