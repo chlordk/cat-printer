@@ -87,10 +87,17 @@ def parse_args():
 
 def resolve_mac(args, config):
     mac = args.mac or config.get('printer', 'mac', fallback=None)
+
     if not mac:
         raise SystemExit(
-            f"No MAC address given. Pass --mac=XX:XX:XX:XX:XX:XX or set it "
-            f"under [printer] in {CONFIG_PATH}")
+            f"No Bluetooth MAC address configured.\n"
+            f"Find it by double-clicking the printer's power button — it prints its own MAC "
+            f"address on a receipt. Then either pass --mac=XX:XX:XX:XX:XX:XX, or save it "
+            f"permanently by adding it under [printer] in {CONFIG_PATH}, e.g.:\n\n"
+            f"    [printer]\n"
+            f"    mac = XX:XX:XX:XX:XX:XX\n"
+        )
+
     if not MAC_RE.match(mac):
         raise SystemExit(f"'{mac}' doesn't look like a MAC address (expected XX:XX:XX:XX:XX:XX)")
     return mac
@@ -165,14 +172,7 @@ def decode_reply(data: bytes):
     return data.decode('utf-8', errors='replace').rstrip('\x00')
 
 def resolve_print_source(file_arg):
-    """Resolve one source into either a loaded PIL Image, or text to render with create_text().
-
-    file_arg is either raw bytes (piped in on stdin) or a str (a --file/positional value).
-    For bytes, or for a str that names an existing file: JPEG/PNG/GIF signature -> loaded as
-    an image; otherwise -> decoded as UTF-8 text.
-    For a str that doesn't name an existing file -> treated as literal text itself, with
-    '\\n' turned into a line break.
-    """
+    """Resolve one source into either a loaded PIL Image, or text to render with create_text()."""
     if isinstance(file_arg, bytes):
         data = file_arg
         image_type = detect_image_type(data[:8])
@@ -232,7 +232,7 @@ def trimImage(im):
     diff = PIL.ImageChops.add(diff, diff, 2.0)
     bbox = diff.getbbox()
     if bbox:
-        return im.crop((bbox[0],bbox[1],bbox[2],bbox[3]+10)) # don't cut off the end of the image
+        return im.crop((bbox[0],bbox[1],bbox[2],bbox[3]+10))
 
 def create_text(text, font_name="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size=12):
     img = PIL.Image.new('RGB', (printerWidth, 5000), color = (255, 255, 255))
@@ -248,8 +248,7 @@ def create_text(text, font_name="/usr/share/fonts/truetype/dejavu/DejaVuSansMono
     d.text((0,0), lines, fill=(0,0,0), font=font)
     return trimImage(img)
 
-def get_wrapped_text(text: str, font: PIL.ImageFont.ImageFont,
-                     line_length: int):
+def get_wrapped_text(text: str, font: PIL.ImageFont.ImageFont, line_length: int):
     lines = ['']
     for word in text.split():
         line = f'{lines[-1]} {word}'.strip()
@@ -261,41 +260,29 @@ def get_wrapped_text(text: str, font: PIL.ImageFont.ImageFont,
 
 def printImage(printer, im):
     if im.width > printerWidth:
-        # image is wider than printer resolution; scale it down proportionately
         height = int(im.height * (printerWidth / im.width))
         im = im.resize((printerWidth, height))
 
     if im.width < printerWidth:
-        # image is narrower than printer resolution; pad it out with white pixels
         padded_image = PIL.Image.new("1", (printerWidth, im.height), 1)
         padded_image.paste(im)
         im = padded_image
 
-    im = im.rotate(180) #print it so it looks right when spewing out of the mouth
-
-    # if image is not 1-bit, convert it
     if im.mode != '1':
         im = im.convert('1')
 
-    # if image width is not a multiple of 8 pixels, fix that
     if im.size[0] % 8:
-        im2 = PIL.Image.new('1', (im.size[0] + 8 - im.size[0] % 8,
-                        im.size[1]), 'white')
+        im2 = PIL.Image.new('1', (im.size[0] + 8 - im.size[0] % 8, im.size[1]), 'white')
         im2.paste(im, (0, 0))
         im = im2
 
-    # Invert image, via greyscale for compatibility
-    #  (no, I don't know why I need to do this)
     im = PIL.ImageOps.invert(im.convert('L'))
-    # ... and now convert back to single bit
     im = im.convert('1')
 
     buf = b''.join((bytearray(b'\x1d\x76\x30\x00'),
-                                          struct.pack('2B', int(im.size[0] / 8 % 256),
-                                                      int(im.size[0] / 8 / 256)),
-                                                      struct.pack('2B', int(im.size[1] % 256),
-                                                                  int(im.size[1] / 256)),
-                                                                  im.tobytes()))
+                    struct.pack('2B', int(im.size[0] / 8 % 256), int(im.size[0] / 8 / 256)),
+                    struct.pack('2B', int(im.size[1] % 256), int(im.size[1] / 256)),
+                    im.tobytes()))
     printer.initialize()
     sleep(sleep_between)
     printer._start_print()
@@ -352,4 +339,3 @@ finally:
     printer.close()
     if args.verbose:
         print("Printer closed")
-
