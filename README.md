@@ -2,17 +2,21 @@
 
 Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux.
 
-![Denver MBP-32B](images/Denver-mbp-32b.webp)
-
-Denver MBP-32B
-
 ![Cat-printer](images/Cat-printer.jpeg)
 
-Cat-printer
+Cat-printer (YHK-B9AA)
 
 ![System info print](images/default-test-print.png)
 
-System information print with MAC address A1:D1:E2:00:B9:AA
+System information print with MAC address A1:D1:E2:00:B9:AA.
+
+![Denver MBP-32B](images/Denver-mbp-32b.webp)
+
+Denver MBP-32B (YHK-MBP-32)
+
+![System info print](images/sys-info-denver-mbp-32b.png)
+
+System information print with MAC address 25:00:35:00:9B:E9.
 
 ## Table of Contents
 
@@ -133,6 +137,7 @@ Command-line options always override the config file; the config file overrides 
 git clone https://github.com/chlordk/cat-printer.git
 cd cat-printer
 sudo apt-get install python3-pil # Pillow image library
+sudo apt install python3-bleak # BLE library
 ```
 
 Optionally make it available on your `PATH`:
@@ -145,6 +150,20 @@ sudo ln -s "$(pwd)/cat-printer" /usr/local/bin/cat-printer
 ### Configuration
 
 The printers MAC address can be found by double-clicking the printer's power button and it prints its own MAC.
+
+The MAC address can also be found by clicking at the Bluetooth icon in the task bar.
+
+![blueman-applet.png](images/blueman-applet.png)
+
+Blueman applet.
+
+![Bluetooth-devices.png](images/Bluetooth-devices.png)
+
+Blueman applet devices.
+
+![Bluetooth-devices2.png](images/Bluetooth-devices2.png)
+
+Blueman applet devices information.
 
 With `bluez` package installed the MAC address can be found with `hcitool`:
 
