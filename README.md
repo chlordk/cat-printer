@@ -4,7 +4,7 @@ Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Den
 
 ## Table of Contents
 
-- [Printer models](#printer_models)
+- [Printer models](#printer-models)
 - [Usage](#usage)
   - [Options](#options)
 - [Install](#install)
