@@ -61,7 +61,7 @@ END="0a0a0a0a"
 
 # Init raster image hex '1d7630' and mode hex '00'.
 # A dashed bar: 384 pixels wide (48 bytes -> hex '30 00') and 20 pixels tall (hex '14 00')
-# Followed by 960 bytes of solid black data ('c3' repeated 960 times)
+# Followed by 960 bytes of dashed black data ('c3' repeated 960 times)
 BAR_CMD="1d76300030001400$(printf 'c3%.0s' {1..960})"
 
 for hex in "$INIT" "$BAR_CMD" "$END" ; do
