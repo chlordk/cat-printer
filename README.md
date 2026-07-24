@@ -10,6 +10,7 @@ Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Den
 - [Install](#install)
   - [Configuration](#configuration)
 - [Debug](#debug)
+- [Developer](#developer)
 - [Credit](#credit)
 
 ## Printer models
@@ -216,6 +217,10 @@ Common issues:
 - **Connection refused / device not found** — make sure the printer is powered on, paired, and in range; re-pair it with `bluetoothctl` if needed.
 - **Garbled or blank output** — try increasing `--sleep`, or double-check `--width` matches your printer's actual resolution.
 - **`'...' is neither a JPEG/PNG/GIF image nor a UTF-8 text file`** — the given file isn't a supported image format and also isn't valid UTF-8 text.
+
+## Developer
+
+See [information for developers](dev/README.md).
 
 ## Credit
 
