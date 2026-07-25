@@ -25,6 +25,7 @@ import PIL.ImageChops
 import PIL.ImageOps
 from pathlib import Path
 import time
+from time import sleep
 import struct
 
 start_time = time.perf_counter()
@@ -322,7 +323,7 @@ def printImage(printer, im):
 
     buf = (
         b"\x1d\x76\x30\x00"
-        + struct.pack("<HH", im.size[0] // 8, im.size[1])
+        + struct.pack("<HH", (im.size[0] + 7) // 8, im.size[1])
         + im.tobytes()
     )
 
