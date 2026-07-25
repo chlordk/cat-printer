@@ -49,3 +49,8 @@ P4
 
 In the script the two first lines from the above is cut off
 and then prefixed with raster image command and the graphics can be printed.
+
+## See also
+
+- [ESC/POS Documentation for Pyramid Printers](https://escpos.readthedocs.io/en/latest/commands.html) description of most commands used by cat printers
+- [EPSON ESC/P Reference Manual December 1997](https://files.support.epson.com/pdf/general/escp2ref.pdf) - just for reference, not the codes used in cat printers
