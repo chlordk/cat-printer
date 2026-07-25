@@ -24,12 +24,41 @@ import PIL.ImageFont
 import PIL.ImageChops
 import PIL.ImageOps
 from pathlib import Path
-from time import sleep
+import time
 import struct
+
+start_time = time.perf_counter()
 
 VERSION = '1.0.0'
 
-CONFIG_PATH = Path.home() / ".config" / "cat-printer" / "config"
+if sys.platform.startswith("linux"):
+    CONFIG_PATH = (
+        Path.home()
+        / ".config"
+        / "cat-printer"
+        / "config"
+    )
+    FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
+elif sys.platform.startswith("darwin"):
+    CONFIG_PATH = (
+        Path.home()
+        / "Library"
+        / "Application Support"
+        / "cat-printer"
+        / "config"
+    )
+    FONT_PATH = "/System/Library/Fonts/Menlo.ttc"
+elif sys.platform.startswith("win"):
+    import os
+    CONFIG_PATH = (
+        Path(os.environ["APPDATA"])
+        / "cat-printer"
+        / "config"
+    )
+    FONT_PATH = r"C:\Windows\Fonts\consola.ttf"
+else:
+    raise RuntimeError(f"Unsupported OS platform: {sys.platform}")
+
 MAC_RE = re.compile(r'^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$')
 
 def load_config(verbose=False):
@@ -64,10 +93,10 @@ def parse_args():
                          help=f"Blank line feeds printed after the last item, default 5 "
                               f"(overrides 'bottom_margin' in {CONFIG_PATH})")
     parser.add_argument('--font', metavar='PATH',
-                         help=f"Path to a TrueType font file, default '/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf' "
+                         help=f"Path to a TrueType font file, default '{FONT_PATH}' "
                               f"(overrides 'font' in {CONFIG_PATH})")
     parser.add_argument('--font-size', type=int, dest='font_size', metavar='SIZE',
-                         help=f"Font size in points, default 12 "
+                         help=f"Font size in points, default 20 "
                               f"(overrides 'font_size' in {CONFIG_PATH})")
     parser.add_argument('--width', type=int, metavar='PIXELS',
                          help=f"Printer resolution in pixels, default 384 "
@@ -94,7 +123,7 @@ def resolve_mac(args, config):
     if not mac:
         raise SystemExit(
             f"No Bluetooth MAC address configured.\n"
-            f"Find it by double-clicking the printer's power button — it prints its own MAC "
+            f"Find the MAC by double-clicking the printer's power button — it prints its own MAC "
             f"address on a receipt. Then either pass --mac=XX:XX:XX:XX:XX:XX, or save it "
             f"permanently by adding it under [printer] in {CONFIG_PATH}, e.g.:\n\n"
             f"    [printer]\n"
@@ -126,7 +155,7 @@ def resolve_font(args, config):
 def resolve_font_size(args, config):
     if args.font_size is not None:
         return args.font_size
-    return config.getint('printer', 'font_size', fallback=12)
+    return config.getint('printer', 'font_size', fallback=20)
 
 def resolve_width(args, config):
     if args.width is not None:
@@ -242,11 +271,12 @@ def trimImage(im):
     if bbox:
         return im.crop((bbox[0],bbox[1],bbox[2],bbox[3]+10))
 
-def create_text(text, font_name="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size=12):
+def create_text(text, font_name="/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf", font_size=20):
     img = PIL.Image.new('RGB', (printerWidth, 5000), color = (255, 255, 255))
     font = PIL.ImageFont.truetype(font_name, font_size)
     if args.verbose:
-        print(f"Font found: {font_name}")
+        print(f"Using font: {font_name}")
+        print(f"Using font-size: {font_size}")
 
     d = PIL.ImageDraw.Draw(img)
     lines = []
@@ -290,10 +320,12 @@ def printImage(printer, im):
     im = PIL.ImageOps.invert(im.convert('L'))
     im = im.convert('1')
 
-    buf = b''.join((bytearray(b'\x1d\x76\x30\x00'),
-                    struct.pack('2B', int(im.size[0] / 8 % 256), int(im.size[0] / 8 / 256)),
-                    struct.pack('2B', int(im.size[1] % 256), int(im.size[1] / 256)),
-                    im.tobytes()))
+    buf = (
+        b"\x1d\x76\x30\x00"
+        + struct.pack("<HH", im.size[0] // 8, im.size[1])
+        + im.tobytes()
+    )
+
     printer.initialize()
     sleep(sleep_between)
     printer._start_print()
@@ -301,12 +333,9 @@ def printImage(printer, im):
     printer.sock.send(buf)
     sleep(sleep_between)
 
-
 args = parse_args()
 config = load_config(args.verbose)
 mac = resolve_mac(args, config)
-if args.verbose:
-    print(f"Using MAC address: {mac}")
 sleep_between = resolve_sleep(args, config)
 bottom_margin = resolve_bottom_margin(args, config)
 rotate = resolve_rotate(args, config)
@@ -314,14 +343,18 @@ font = resolve_font(args, config)
 font_size = resolve_font_size(args, config)
 printerWidth = resolve_width(args, config)
 port = resolve_port(args, config)
+if args.verbose:
+    print(f"Using MAC address: {mac}")
+    print(f"Using sleep: {sleep_between}")
+    print(f"Using bottom_margin: {bottom_margin}")
+    print(f"Using rotate: {rotate}")
 
 printer = Printer(mac, port)
+if args.verbose:
+    print("Connecting to printer...")
 printer.connect()
 
 try:
-    if args.verbose:
-        print("Connecting to printer...")
-
     if args.status:
         serial = printer.serial_number()
         product = printer.product_info()
@@ -351,3 +384,6 @@ finally:
     printer.close()
     if args.verbose:
         print("Printing completed.")
+        end_time = time.perf_counter()
+        elapsed_ms = (end_time - start_time) * 1000
+        print(f"Execution time: {elapsed_ms:.0f} ms")

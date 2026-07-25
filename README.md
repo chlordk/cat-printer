@@ -169,7 +169,12 @@ Blueman applet devices.
 
 Blueman applet devices information.
 
-With `bluez` package installed the MAC address can be found with `hcitool`:
+With `bluez` package installed the MAC address can be found with `bluetoothctl` or `hcitool`:
+
+```bash
+$ bluetoothctl devices
+Device 25:00:35:00:9B:E9 YHK-MBP-32
+```
 
 ```bash
 $ hcitool inq
