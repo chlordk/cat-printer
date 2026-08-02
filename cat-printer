@@ -102,9 +102,9 @@ def parse_args():
     parser.add_argument('--width', type=int, metavar='PIXELS',
                          help=f"Printer resolution in pixels, default 384 "
                               f"(overrides 'width' in {CONFIG_PATH})")
-    parser.add_argument('--port', type=int, metavar='CHANNEL',
+    parser.add_argument('--channel', type=int, metavar='CHANNEL',
                          help=f"Bluetooth RFCOMM channel, default 2 "
-                              f"(overrides 'port' in {CONFIG_PATH})")
+                              f"(overrides 'channel' in {CONFIG_PATH})")
     parser.add_argument('--file', action='append', metavar='PATH_OR_TEXT',
                          help="A JPEG/PNG/GIF image file, a UTF-8 text file, or literal text "
                               "to print if no such file exists. In literal text, '\\n' is "
@@ -164,9 +164,9 @@ def resolve_width(args, config):
     return config.getint('printer', 'width', fallback=384)
 
 def resolve_port(args, config):
-    if args.port is not None:
-        return args.port
-    return config.getint('printer', 'port', fallback=2)
+    if args.channel is not None:
+        return args.channel
+    return config.getint('printer', 'channel', fallback=2)
 
 def resolve_sources(args):
     """Return the list of raw values to print, in order: --file entries, or a single
@@ -343,14 +343,14 @@ rotate = resolve_rotate(args, config)
 font = resolve_font(args, config)
 font_size = resolve_font_size(args, config)
 printerWidth = resolve_width(args, config)
-port = resolve_port(args, config)
+channel = resolve_port(args, config)
 if args.verbose:
     print(f"Using MAC address: {mac}")
     print(f"Using sleep: {sleep_between}")
     print(f"Using bottom_margin: {bottom_margin}")
     print(f"Using rotate: {rotate}")
 
-printer = Printer(mac, port)
+printer = Printer(mac, channel)
 if args.verbose:
     print("Connecting to printer...")
 printer.connect()

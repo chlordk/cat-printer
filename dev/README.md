@@ -8,7 +8,7 @@ The Bluetooth can be assigned like a serial port and then
 be used with serial port tools like `minicom` and `CuteCom`.
 As `minicom` is hard entering hex numbers `CuteCom` is used here.
 
-To bind the bluetooth device MAC as a serial port on channel run the command:
+To bind the bluetooth device MAC as a serial port on channel 2 run the command:
 
 ```
 sudo rfcomm bind 0 00:11:22:AB:CD:EF 2

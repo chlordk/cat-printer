@@ -116,7 +116,7 @@ cat-printer --version
 | `--file PATH_OR_TEXT` | — | Image file, text file, or literal text to print. Repeatable. |
 | `--font PATH` | `/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf` | TrueType font used to render text |
 | `--font-size SIZE` | `12` | Font size in points |
-| `--port CHANNEL` | `2` | Bluetooth RFCOMM channel |
+| `--channel CHANNEL` | `2` | Bluetooth RFCOMM channel |
 | `--rotate DEGREES` | `0` | Degrees to rotate image or text |
 | `--sleep SECONDS` | `0.5` | Delay between printer commands |
 | `--status` | off | Print serial number/product info/status and exit |
@@ -192,7 +192,7 @@ mac = 01:23:45:AB:CD:EF
 bottom_margin = 5
 font = /usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf
 font_size = 12
-port = 2
+channel = 2
 rotate = 0
 sleep = 0.5
 width = 384
