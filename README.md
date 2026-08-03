@@ -1,6 +1,6 @@
 # cat-printer
 
-Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux.
+Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux or Windows.
 
 ## Table of Contents
 
@@ -132,7 +132,7 @@ Command-line options always override the config file; the config file overrides 
 
 - Python 3
 - [Pillow](https://pypi.org/project/Pillow/)
-- A Linux system with Bluetooth/RFCOMM support
+- A Linux/Windows system with Bluetooth/RFCOMM support
 - The printer paired over Bluetooth beforehand (e.g. via `bluetoothctl`)
 
 ### Steps
