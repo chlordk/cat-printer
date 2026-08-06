@@ -93,15 +93,25 @@ P4
 In the script the two first lines from the above is cut off
 and then prefixed with raster image command and the graphics can be printed.
 
-## Bluetooth chip
+## Denver MBP-32B chips
 
-The bluetooth chip inside is a
-[Microchip IS1678 Bluetooth Dual-Mode System on a Chip](https://www.microchip.com/en-us/product/is1678)
-which means the chip both support Bluetooth Classic BR/EDR and
-BLE/LE Bluetooth Low Energy (GATT).
+The internals of the printer is one PCB with all chips on the component side.
 
-The chip has a UART interface (TX/RX) where the backend MCU can
-get a simple UART connection and then handling the printing.
+![Denver PCB component side](../images/denver-pcb-c.jpg)
+
+Component side:
+
+* JL BP2T554-56C4, 32 pins
+* 8833 2534, 16 pins
+* 4056E BECF, 8 pins
+* USB-C connector (power only)
+
+![Denver PCB solder side](../images/denver-pcb-s.jpg)
+
+Solder side:
+
+* Button on the left side
+* Battery connector
 
 ## See also
 
