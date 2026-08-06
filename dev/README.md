@@ -30,7 +30,7 @@ sudo usermod -a -G dialout $USER
 Start `CuteCom` and open the device `/dev/rfcomm0` and
 enter the `request status` in hex `1e 47 03`:
 
-![CuteCom](../CuteCom.png)
+![CuteCom](../images/CuteCom.png)
 
 and the status will shown `HV=H1.0,SV=V1.01,VOLT=7720mv,DPI=384,<break>`.
 
@@ -99,9 +99,12 @@ The internals of the printer is one PCB with all chips on the component side.
 
 ![Denver PCB component side](../images/denver-pcb-c.jpg)
 
+
 Component side:
 
-* JL BP2T554-56C4, 32 pins
+* Product name: K7_YHK-Walkprint, JT2512009
+* LED green and red
+* JTL BP2T554-56C4, 32 pins
 * 8833 2534, 16 pins
 * 4056E BECF, 8 pins
 * USB-C connector (power only)
@@ -110,6 +113,7 @@ Component side:
 
 Solder side:
 
+* Product version: QJ-K7-V1.0
 * Button on the left side
 * Battery connector
 
