@@ -2,6 +2,13 @@
 
 Print images and text on YHK/Cat Bluetooth thermal printers (tested with the Denver MBP-32B) from the command line or from scripts on Linux or Windows.
 
+Platform support
+----------------
+
+| Linux | Windows | macOS |
+|:-----:|:-------:|:-----:|
+| :heavy_check_mark: | :heavy_check_mark: | :heavy_minus_sign: |
+
 ## Table of Contents
 
 - [Printer models](#printer-models)
